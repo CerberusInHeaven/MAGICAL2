@@ -117,4 +117,103 @@ router.get("/:id", async (req, res) => {
   }
 })
 
+// Rota para alterar um cliente existente
+router.put("/:id", async (req, res) => {
+  const { id } = req.params
+  const valida = clienteSchema.safeParse(req.body)
+  
+  if (!valida.success) {
+    res.status(400).json({ erro: valida.error })
+    return
+  }
+
+  // Valida a senha se ela foi fornecida no corpo da requisição
+  if (valida.data.senha) {
+    const erros = validaSenha(valida.data.senha)
+    if (erros.length > 0) {
+      res.status(400).json({ erro: erros.join("; ") })
+      return
+    }
+  }
+
+  try {
+    // Verifica se o cliente existe
+    const clienteExistente = await prisma.cliente.findUnique({
+      where: { id }
+    })
+
+    if (!clienteExistente) {
+      res.status(404).json({ erro: "Cliente não encontrado" })
+      return
+    }
+
+    // Verifica se o novo email já está em uso por outro cliente
+    if (valida.data.email !== clienteExistente.email) {
+      const emailExistente = await prisma.cliente.findFirst({
+        where: { 
+          email: valida.data.email,
+          NOT: { id }
+        }
+      })
+
+      if (emailExistente) {
+        res.status(400).json({ erro: "Já existe um cliente cadastrado com este e-mail" })
+        return
+      }
+    }
+
+    // Prepara os dados para atualização
+    const dadosAtualizacao: {
+      nome: string
+      email: string
+      senha?: string
+    } = {
+      nome: valida.data.nome,
+      email: valida.data.email
+    }
+
+    // Se a senha foi fornecida, cria o hash
+    if (valida.data.senha) {
+      const salt = bcrypt.genSaltSync(12)
+      dadosAtualizacao.senha = bcrypt.hashSync(valida.data.senha, salt)
+    }
+
+    // Atualiza o cliente
+    const clienteAtualizado = await prisma.cliente.update({
+      where: { id },
+      data: dadosAtualizacao
+    })
+
+    res.status(200).json(clienteAtualizado)
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+
+// Rota para excluir um cliente
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params
+  
+  try {
+    // Verifica se o cliente existe
+    const clienteExistente = await prisma.cliente.findUnique({
+      where: { id }
+    })
+
+    if (!clienteExistente) {
+      res.status(404).json({ erro: "Cliente não encontrado" })
+      return
+    }
+
+    // Exclui o cliente
+    await prisma.cliente.delete({
+      where: { id }
+    })
+
+    res.status(204).send() // 204 No Content - resposta bem-sucedida sem corpo
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+
 export default router
