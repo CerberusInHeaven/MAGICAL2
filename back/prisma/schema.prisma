@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model Tipo {
+  id             Int         @id @default(autoincrement())
+  nome           String      @db.VarChar(30)
+  artefatos         Artefato[]
+  @@map("Tipo")
+}
+
+model Artefato {
+  id             Int          @id @default(autoincrement())
+  nome           String       @db.VarChar(100)
+  poder          Int          @db.SmallInt
+  preco          Decimal      @db.Decimal(10, 2)
+  foto           String
+  encantamentos     String?
+  raridade    Combustiveis @default(COMUM)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt()
+  destaque       Boolean      @default(true)
+  tipo          Tipo        @relation(fields: [tipoId], references: [id])
+  tipoId        Int
+  fotos          Foto[]
+  propostas      Proposta[]
+  @@map("artefatos")
+}
+
+enum Combustiveis {
+  COMUM
+  MAGICO
+  EPICO
+  CAMPEAO
+  
+}
+
+model Foto {
+  id             Int          @id @default(autoincrement())
+  descricao      String       @db.VarChar(40)
+  url            String
+  artefato          Artefato        @relation(fields: [artefatoId], references: [id])
+  artefatoId        Int
+  @@map("fotos")
+}
+
+model Cliente {
+  id            String   @db.VarChar(36) @id @default(uuid())
+  nome          String   @db.VarChar(60)
+  email         String   @db.VarChar(40)
+  senha         String   @db.VarChar(60)   // senha deve ser varchar(60)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt  
+  propostas     Proposta[]
+  @@map("clientes")
+}
+
+model Proposta {
+  id          Int       @id @default(autoincrement())
+  cliente     Cliente   @relation(fields: [clienteId], references: [id])
+  clienteId   String    @db.VarChar(36)
+  artefato          Artefato        @relation(fields: [artefatoId], references: [id])
+  artefatoId        Int
+  descricao   String    @db.VarChar(255)
+  resposta    String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt  
+  @@map("propostas")
+}
