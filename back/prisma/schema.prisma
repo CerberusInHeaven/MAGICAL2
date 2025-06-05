@@ -14,8 +14,8 @@ datasource db {
 }
 
 model Tipo {
-  id             Int         @id @default(autoincrement())
-  nome           String      @db.VarChar(30)
+  id                Int         @id @default(autoincrement())
+  nome              String      @db.VarChar(30)
   artefatos         Artefato[]
   @@map("Tipo")
 }
@@ -26,16 +26,18 @@ model Artefato {
   poder          Int          @db.SmallInt
   preco          Decimal      @db.Decimal(10, 2)
   foto           String
-  encantamentos     String?
-  raridade    Combustiveis @default(COMUM)
+  encantamentos  String?
+  raridade       Combustiveis @default(COMUM)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt()
   destaque       Boolean      @default(true)
-  tipo          Tipo        @relation(fields: [tipoId], references: [id])
-  tipoId        Int
+  tipo           Tipo        @relation(fields: [tipoId], references: [id])
+  tipoId         Int
   fotos          Foto[]
   propostas      Proposta[]
   @@map("artefatos")
+  Admin Admin @relation(fields: [adminId], references: [id])
+  adminId Int
 }
 
 enum Combustiveis {
@@ -47,9 +49,9 @@ enum Combustiveis {
 }
 
 model Foto {
-  id             Int          @id @default(autoincrement())
-  descricao      String       @db.VarChar(40)
-  url            String
+  id                Int          @id @default(autoincrement())
+  descricao         String       @db.VarChar(40)
+  url               String
   artefato          Artefato        @relation(fields: [artefatoId], references: [id])
   artefatoId        Int
   @@map("fotos")
@@ -60,6 +62,7 @@ model Cliente {
   nome          String   @db.VarChar(60)
   email         String   @db.VarChar(40)
   senha         String   @db.VarChar(60)   // senha deve ser varchar(60)
+  cidade        String   @db.VarChar(60) @default("")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt  
   propostas     Proposta[]
@@ -67,14 +70,28 @@ model Cliente {
 }
 
 model Proposta {
-  id          Int       @id @default(autoincrement())
-  cliente     Cliente   @relation(fields: [clienteId], references: [id])
-  clienteId   String    @db.VarChar(36)
+  id                Int       @id @default(autoincrement())
+  cliente           Cliente   @relation(fields: [clienteId], references: [id])
+  clienteId         String    @db.VarChar(36)
   artefato          Artefato        @relation(fields: [artefatoId], references: [id])
   artefatoId        Int
-  descricao   String    @db.VarChar(255)
-  resposta    String?   @db.VarChar(255)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt  
+  descricao         String    @db.VarChar(255)
+  resposta          String?   @db.VarChar(255)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt  
   @@map("propostas")
+  Admin Admin[]
+}
+
+model Admin {
+  id  Int @id @default(autoincrement())
+  nome String @db.VarChar(60)
+  email String @db.VarChar(60)
+  senha String @db.VarChar(60)
+  nivel Int    @db.SmallInt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  propostas Proposta[]
+  artefatos Artefato[]
+  @@map("DungeonMaster")
 }
